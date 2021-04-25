@@ -8,7 +8,9 @@ static const char * ultrasound_commands[] = {
     "dump", //1
     "freq ", //2
     "pwm ", //3
-    "deadtime " // 4
+    "deadtime ", // 4
+    "on", // 5
+    "off" // 6
 };
 
 
@@ -21,17 +23,23 @@ Ultrasound::Ultrasound(Stream * _io) {
 }
 
 
-void Ultrasound::begin() {
+void Ultrasound::begin(bool inverted) {
     // Timer 1 is connected to pins 9 and 10
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  digitalWrite(11, LOW);
+  
   /// hhttp://ww1.microchip.com/downloads/en/DeviceDoc/en590320.pdf 
   // page 114 for PWM description.
   // page 135
 
   // mode needs to set TOP and PWM.
-
-  TCCR1A = (TCCR1A & 0x0F) | 0xB0 ; // set pin 10 inverted ie 0b1011xxxx
+  if (inverted) {
+      TCCR1A = (TCCR1A & 0x0F) | 0xB0 ; // set pin 10 inverted ie 0b1011xxxx for MCP14E3 or  for 0b11100000 MCP14E4
+  } else {
+      TCCR1A = (TCCR1A & 0x0F) | 0xE0 ; // set pin 10 inverted ie 0b11100000 for MCP14E4, off is low.
+  }
   TCCR1A = (TCCR1A & 0xFC) | 0x00 ; // phase correct pwm, mode 8, ie 0bxxxxxx00
   TCCR1B = (TCCR1B & 0xE7) | 0x10 ; // phase correct pwm, mode 8, ie 0bxxx10xxx
 
@@ -39,11 +47,21 @@ void Ultrasound::begin() {
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x02 ; // 2MHz
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x03 ; // 250KHz
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x04 ; // 15.625KHz 
-
+  setEnabled(false);
   setFrequency(128); // 62.5Khz
   setPwm(50);
 }
 
+
+void Ultrasound::setEnabled(bool enabled) {
+    enable = enabled;
+    setPwm(percent);
+    if ( enable ) {
+        digitalWrite(11, HIGH);
+    } else {
+        digitalWrite(11, LOW);
+    }
+}
 
 
 void Ultrasound::setFrequency(double requestedFrequencyKhz) {
@@ -73,8 +91,13 @@ void Ultrasound::setPwm(int requestedPercent) {
   uint16_t center = (counterTopValue/2);
   chanALimit = counterTopValue-((center-deadTimeTicks)*percent)/100;
   chanBLimit = ((center-deadTimeTicks)*percent)/100;
-  OCR1A = chanALimit;
-  OCR1B = chanBLimit;
+  if ( enable ) {
+    OCR1A = chanALimit;
+    OCR1B = chanBLimit;
+  } else {
+    OCR1A = counterTopValue;
+    OCR1B = 0;
+  }
 
 }
 
@@ -99,6 +122,8 @@ void Ultrasound::help() {
     io->println(F("freq <khz>     - Set the Frequency in khz (double)"));
     io->println(F("pwm <%>        - Set PWM as a percentage (int)"));
     io->println(F("deadtime <us>  - Set deadtime in us (int)"));
+    io->println(F("on             - Turn output on"));
+    io->println(F("off            - Turn output off"));
 }
 
 
@@ -136,6 +161,12 @@ int8_t Ultrasound::docmd(const char * command) {
             io->print(chanBLimit);
             io->print(F(",dtt="));
             io->println(deadTimeTicks);
+            break;
+        case CMD_ON:
+            setEnabled(true);
+            break;
+        case CMD_OFF:
+            setEnabled(false);
             break;
         default:
             io->print(F("Command Not recognised:"));

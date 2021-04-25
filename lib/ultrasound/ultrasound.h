@@ -12,7 +12,9 @@
 #define CMD_FREQENCY 2
 #define CMD_PWM 3
 #define CMD_DEADTIME 4
-#define NCOMMANDS 5
+#define CMD_ON 5
+#define CMD_OFF 6
+#define NCOMMANDS 7
 
 
 
@@ -21,11 +23,12 @@
 class Ultrasound {
     public:
         Ultrasound(Stream * _io = &Serial);
-        void begin(void);
+        void begin(bool inverted = false);
         void process(void);
     private:
         void setFrequency(double  frequencyKhz);
         void setPwm(int percent);
+        void setEnabled(bool enabled);
         void setDeadtime(int deadTimeMicros);
         int match(const char * command, const char ** commands, int ncommands, const char ** startData);
         char * readLine();
@@ -39,6 +42,7 @@ class Ultrasound {
         double frequencyKhz = 0;
         double achievedFrequency = 0;
         int percent = 0;
+        bool enable = false;
         Stream* io;        
         int bufferPos = 0;
         char inputLine[READBUFFER_LEN];

@@ -34,6 +34,7 @@ The output needs to be fed into an inverting mosfet driver drivng a pair of mosf
 
 Output screenshots
 
+These are for a inverting driver, see Ultrasound.begin() for details on how to generate non invertig output.
 
 
 ![50KHz 100% PWM 2us deadtime](images/50Khz100pwm2dead.png)
