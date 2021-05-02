@@ -32,7 +32,7 @@ The levels can be calculated as follows
 
 The output needs to be fed into an inverting mosfet driver drivng a pair of mosfets driving a center tapped coil with all the normal protections. Deadtime need to be calculated based on the inductance of the coil to ensure the mostfets switch off correctly between pulses.
 
-Output screenshots
+# Output screenshots
 
 These are for a inverting driver, see Ultrasound.begin() for details on how to generate non invertig output.
 
@@ -42,3 +42,26 @@ These are for a inverting driver, see Ultrasound.begin() for details on how to g
 ![50KHz 50% PWM 2us deadtime](images/50Khz50pwm2dead.png)
 
 ![200KHz 100% PWM 1us deadtime](images/200Khz100pwm1dead.png)
+
+# Driver and code
+
+The driver is derived from the Jaycar circuit which uses a 5V PIC to drive the IRF540N mosfets directly. Instead this uses a RFP50N06 and a MCP14E4 dual 4.5A Mosfet driver capable of driving the gate(2200pf) of the Mosfet in about 15ns using guidance from Microchip design notes. Ramp on scopes confirms this. I found IRF540Ns are not robust enough to be driven with a clean 12v square wave. Output is upto 700v peak to peak. I get minimal ringing in the mosfet drive or the mosfet output with this setup and the high voltage output even looks like a clean sie wave at some frequencies.
+
+Running the Arduino connected to a computer over serial port is not advised with the output enabled.
+
+# Sequence
+
+I found with the previous 6 chanel versiom that although I had an elaborate configurtion method over serial, I never used it, and connecting a usb port to this board without proper isolation potentially exposes the computer to 600V or more if something goes wrong. So I hard code the sequence and flash the pro mini to make change with the power side of the driver disabled.
+
+The sequence 12 10ms bursts seperated by 20ms pause to rechage the capacitors. The sequence repeats 20 times before pausing, with a 400ms delay between sequences. Each sequence incresaes the frequency by 1.0721 times. At 80Khz, 62KHz is subtracted and the process continues. This ensures every frequency is covered.  On pause power levels are checked. On high power (> 13.7v supply) the pause is 8s. on Low power  (< 12v) the pause is 30s and below 12v the chip sleeps for 60 before checking the voltage again. No output is generated below 12v.
+
+# LEDS
+
+The onboard led flashes to indicate state. Flash period is 200ms.
+
+7 flashes indicates a boot sequence.
+3 flashes before sleeping for 60s
+2 flashes every 5s during low power sleep for low power mode.
+
+During operation the led toggle as the frequency changes.
+

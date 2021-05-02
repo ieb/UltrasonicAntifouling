@@ -10,7 +10,8 @@ static const char * ultrasound_commands[] = {
     "pwm ", //3
     "deadtime ", // 4
     "on", // 5
-    "off" // 6
+    "off", // 6
+    "pulse " // 7
 };
 
 
@@ -23,7 +24,7 @@ Ultrasound::Ultrasound(Stream * _io) {
 }
 
 
-void Ultrasound::begin(bool inverted) {
+void Ultrasound::begin(double frequency, double pwm, bool inverted) {
     // Timer 1 is connected to pins 9 and 10
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);
@@ -48,10 +49,19 @@ void Ultrasound::begin(bool inverted) {
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x03 ; // 250KHz
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x04 ; // 15.625KHz 
   setEnabled(false);
-  setFrequency(128); // 62.5Khz
-  setPwm(50);
+  setFrequency(frequency); // 62.5Khz
+  setPwm(pwm);
 }
 
+// reset counters before each cycle to ensure that
+// the sequence doesnt start with a long pulse.
+// which can be long enough to blow a mosfet without
+// deadtime.
+void Ultrasound::resetCounters() {
+    cli();
+    TCNT1 = 0x00;
+    sei();
+}
 
 void Ultrasound::setEnabled(bool enabled) {
     enable = enabled;
@@ -124,6 +134,7 @@ void Ultrasound::help() {
     io->println(F("deadtime <us>  - Set deadtime in us (int)"));
     io->println(F("on             - Turn output on"));
     io->println(F("off            - Turn output off"));
+    io->println(F("pulse <ms>     - Turn output pn for ms"));
 }
 
 
@@ -167,6 +178,19 @@ int8_t Ultrasound::docmd(const char * command) {
             break;
         case CMD_OFF:
             setEnabled(false);
+            break;
+        case CMD_PULSE:
+            {
+                int16_t duration = atoi(data);
+                io->print(F("p="));
+                io->print(duration);
+                io->println(" on");
+                setEnabled(true);
+                delay(duration);
+                setEnabled(false);
+                io->println("off");
+
+            }            
             break;
         default:
             io->print(F("Command Not recognised:"));

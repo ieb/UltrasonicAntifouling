@@ -14,7 +14,8 @@
 #define CMD_DEADTIME 4
 #define CMD_ON 5
 #define CMD_OFF 6
-#define NCOMMANDS 7
+#define CMD_PULSE 7
+#define NCOMMANDS 8
 
 
 
@@ -23,13 +24,14 @@
 class Ultrasound {
     public:
         Ultrasound(Stream * _io = &Serial);
-        void begin(bool inverted = false);
+        void begin(double frequency=20, double pwm=10, bool inverted = false);
         void process(void);
-    private:
         void setFrequency(double  frequencyKhz);
         void setPwm(int percent);
         void setEnabled(bool enabled);
         void setDeadtime(int deadTimeMicros);
+        void resetCounters();
+    private:
         int match(const char * command, const char ** commands, int ncommands, const char ** startData);
         char * readLine();
         int8_t docmd(const char * command);
