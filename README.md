@@ -1,3 +1,12 @@
+
+# Ultrasonic Antifouling Mk2.
+
+My Mk1 unit finally failed after 4 years contnuous permanently on. It was only restarted when there were powercuts on shorepower. If failed because of salt getting onto the back of the board causing a short which blew the Arduino. Rather than fix, I decided to build Mk2. This time its taken 2 weeks of evenings. Last time too months.
+
+The design is much simpler. It uses the PWM output of the Atmel328p Timer1 running off a 16MHz 5V pro mini with no pre-scaler. The MOSFET drivers are still used over driving the MOSFETs from logic levels, but there is not precise frequency generator the variable power is simplified to run in 3 states depending on input voltage. Anything over 13.7 runs at high power consumption. 13.7 to 12 at half power consumption. Below 12 the 328p goes into a sleep mode drawing 20mA until the supply voltage returns. 
+
+This time, rather than driving 6 channels from a single Ardiono I am dedicating an Ardiono Pro Mini to each channel, and putting each in their own IP67 sealed box, with a thermally coupled external heatsink. This eliminates 600V high frequency being routed round the boat, which never felt right.
+
 # Variable Frequency Ultrasound generator
 
 This code generated 2 complementary square waves to drive MOSFETS to produce untrasound output. It will operate from about 200Hz to 250KHz with PWM 0-100% and deadtime control in microseconds.
@@ -32,6 +41,8 @@ The levels can be calculated as follows
 
 The output needs to be fed into an inverting mosfet driver drivng a pair of mosfets driving a center tapped coil with all the normal protections. Deadtime need to be calculated based on the inductance of the coil to ensure the mostfets switch off correctly between pulses.
 
+One anomaly that was discovered in testing, if the timer is left to run every now and again when it wraps round a super long pulse is output. This can result in not enough deadtime at which point both MOSFETS will latch up, and if there isnt a current limiting device blow them or the fuse. I used a 21w 12v bulb during testing which would light up when there was an over current event.
+
 # Output screenshots
 
 These are for a inverting driver, see Ultrasound.begin() for details on how to generate non invertig output.
@@ -55,6 +66,9 @@ I found with the previous 6 chanel versiom that although I had an elaborate conf
 
 The sequence 12 10ms bursts seperated by 20ms pause to rechage the capacitors. The sequence repeats 20 times before pausing, with a 400ms delay between sequences. Each sequence incresaes the frequency by 1.0721 times. At 80Khz, 62KHz is subtracted and the process continues. This ensures every frequency is covered.  On pause power levels are checked. On high power (> 13.7v supply) the pause is 8s. on Low power  (< 12v) the pause is 30s and below 12v the chip sleeps for 60 before checking the voltage again. No output is generated below 12v.
 
+
+
+
 # LEDS
 
 The onboard led flashes to indicate state. Flash period is 200ms.
@@ -63,5 +77,24 @@ The onboard led flashes to indicate state. Flash period is 200ms.
 3 flashes before sleeping for 60s
 2 flashes every 5s during low power sleep for low power mode.
 
-During operation the led toggle as the frequency changes.
+During operation the led toggles as the frequency changes.
+
+
+# Output.
+
+Output comes out at 757v peak to peak at masimum dropping off a bit at higher frequencies. The output wave is a lot cleaner and more sinusoidal than before, and the output sequence seems to generate more ultrasound for longer than before.
+
+
+![Output, probably 70Khz](images/Output.png)
+
+![Output, probably 50Khz](images/Output50KHz.png)
+
+![Output, probably 27Khz](images/WierdOutput.png)
+
+
+# Prototype
+
+The prototype is on a double sided CNC milled PCB, which has been thourugly hacked to get the board quiet and efficient with minimal interference on supply line. Following units will have less hacked boards, and probably more surface mount components.
+
+
 
