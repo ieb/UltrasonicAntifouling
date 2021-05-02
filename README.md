@@ -43,6 +43,8 @@ The output needs to be fed into an inverting mosfet driver drivng a pair of mosf
 
 One anomaly that was discovered in testing, if the timer is left to run every now and again when it wraps round a super long pulse is output. This can result in not enough deadtime at which point both MOSFETS will latch up, and if there isnt a current limiting device blow them or the fuse. I used a 21w 12v bulb during testing which would light up when there was an over current event.
 
+The fix is to zero the TCNT1 register before each pulse of output ensuring no wrap round occurs.
+
 # Output screenshots
 
 These are for a inverting driver, see Ultrasound.begin() for details on how to generate non invertig output.
