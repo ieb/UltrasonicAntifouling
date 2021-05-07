@@ -114,7 +114,7 @@ Load switches are generally P-Channel Mosfets or N-Channel. P Channel are more e
 
 This is relatively simple. Charge a capacitor between gate and source charged by the supply voltage, with a time constant that ensures the gate voltage ramps down (Vgs(th) is -ve) at a rate that ballances current against switch on time to limit the mosfet heat up. It needs a few components and an extra nmos transistor to turn the switch on. The turn on signal comes from a gio pin going high, turn off when its taken low. Model in ltspice/pchannel-softstart.asc.  Power dissapation when fully switched on is about double for a comparable P channel, and about 0.5w. This may need to he taken into account.
 
-![P-Channel Loadswitch](images/pchanel-loadswitch.png)
+![P-Channel Loadswitch](images/pcannel-loadswitch.png)
 
 # N-Channel Load Switch
 
