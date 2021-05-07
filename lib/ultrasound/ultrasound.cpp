@@ -24,12 +24,14 @@ Ultrasound::Ultrasound(Stream * _io) {
 }
 
 
-void Ultrasound::begin(double frequency, double pwm, bool inverted) {
+void Ultrasound::begin(int _enablePin, double frequency, double pwm, bool inverted) {
     // Timer 1 is connected to pins 9 and 10
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
-  digitalWrite(11, LOW);
+  enablePin = _enablePin;
+
+  pinMode(enablePin, OUTPUT);
+  digitalWrite(enablePin, LOW);
   
   /// hhttp://ww1.microchip.com/downloads/en/DeviceDoc/en590320.pdf 
   // page 114 for PWM description.
@@ -67,9 +69,9 @@ void Ultrasound::setEnabled(bool enabled) {
     enable = enabled;
     setPwm(percent);
     if ( enable ) {
-        digitalWrite(11, HIGH);
+        digitalWrite(enablePin, HIGH);
     } else {
-        digitalWrite(11, LOW);
+        digitalWrite(enablePin, LOW);
     }
 }
 

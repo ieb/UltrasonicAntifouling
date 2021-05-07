@@ -24,7 +24,7 @@
 class Ultrasound {
     public:
         Ultrasound(Stream * _io = &Serial);
-        void begin(double frequency=20, double pwm=10, bool inverted = false);
+        void begin(uint8_t enablePin=12, double frequency=20, double pwm=10, bool inverted = false);
         void process(void);
         void setFrequency(double  frequencyKhz);
         void setPwm(int percent);
@@ -44,6 +44,7 @@ class Ultrasound {
         double frequencyKhz = 0;
         double achievedFrequency = 0;
         int percent = 0;
+        uint8_t enablePin = 12;
         bool enable = false;
         Stream* io;        
         int bufferPos = 0;
