@@ -114,13 +114,13 @@ Load switches are generally P-Channel Mosfets or N-Channel. P Channel are more e
 
 This is relatively simple. Charge a capacitor between gate and source charged by the supply voltage, with a time constant that ensures the gate voltage ramps down (Vgs(th) is -ve) at a rate that ballances current against switch on time to limit the mosfet heat up. It needs a few components and an extra nmos transistor to turn the switch on. The turn on signal comes from a gio pin going high, turn off when its taken low. Model in ltspice/pchannel-softstart.asc.  Power dissapation when fully switched on is about double for a comparable P channel, and about 0.5w. This may need to he taken into account.
 
-![P-Channel Loadswitch](images/pchannel-loadswitch.png)
+![P-Channel Loadswitch](images/pchanel-loadswitch.png)
 
 # N-Channel Load Switch
 
 This is harder. The gate needs to be above the threshold voltage of the source, which when fully turned will be the same as the drain (supply voltage), so the gate needs to be at a higher voltage than the supply voltage. The solution is to use a charge pump, pumped by a square wave from the Arduino PWM output (50/50), assumning there is a spare. The copmbination of frequency of PWM, pump capacitor value and storage capacitor value controls the ultimate voltage achieved by the charge pump which tends towards the voltage of pwm output. Because the pump is decoupled from ground and coupled to the source, the voltage at the gate can rise above the absolute voltage of the suppy, and hence go fully on. Increasing the pwm frequency increases the slope, inrush current and peak power during turn on. The component count is less, and the components are less expensive, but it requires active MCU control to run.  Model in ltspice/nchannel-softstart.asc
 
-![P-Channel Loadswitch](images/nchannel-loadswitch.png)
+![P-Channel Loadswitch](images/nchanel-loadswitch.png)
 
 
 # Filtering
