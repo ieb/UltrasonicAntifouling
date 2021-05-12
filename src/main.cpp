@@ -51,7 +51,6 @@ bool checkLoadSwitch(int result, bool abort = false) {
       flashLed(8);
       break;
     case LOADSWITCH_ON:
-//      flashLed(9);
       return true;
   }
   return false;
@@ -94,6 +93,7 @@ void loop() {
        Serial.println("Voltage too low, sleeping for 60s");
        toggleLed(6);
        delay(60000);
+       checkLoadSwitch(loadswitch.turnOn());
        return;
     } else if ( supplyVoltageReading < 489 ) { // 13.7
       Serial.println("On battery, half power");

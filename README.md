@@ -73,13 +73,24 @@ The sequence 12 10ms bursts seperated by 20ms pause to rechage the capacitors. T
 
 # LEDS
 
-The onboard led flashes to indicate state. Flash period is 200ms.
+The onboard led flashes to indicate state.  Flash period is 200ms. This approach seems complex but anyone who has been at sea at night might enjoy the port hand marker impression. The reason for the flashes are to help diagnose the units behaviour without having to get a volt meter out. Couloured leds might have been easier to understand.
 
-7 flashes indicates a boot sequence.
-3 flashes before sleeping for 60s
-2 flashes every 5s during low power sleep for low power mode.
+On boot the battery state and any fault status is reported. The fault must be fixed before the unit will power up, on boot. After boot the unit will continue to function but will report the fault on every cycle.
 
-During operation the led toggles as the frequency changes.
+* 4 flashes means supply voltage is too high > 15v, the unit will not run
+* 5 flashes means the initial slow charge failed to reach > 10.5v
+* 6 flashes means the charge failed to sabalise at less than 2V below the supply voltage, probably a failed mosfet.
+
+
+* 7 flashes means supply is turned off.
+
+
+During operation the led occults (off-on-off) as the frequency changes. At the end of each set of frequencies, voltages are checked and the unit may goin into one of 3 states.
+
+* Standby due to a supply voltage < 12.0v, 3 flashes followed by a 60s sleep, folled by a check whcih may report 4 to 7 flashes.
+* Low power, voltage < 13.7, 2 flashes every 5s for 30s followed by a check which may report 4 to 7 flashes.
+* Full power, no flashes just a 5s sleep between operations.
+
 
 
 # Output.
