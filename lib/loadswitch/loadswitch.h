@@ -5,9 +5,6 @@
 #include <Arduino.h>
 
 
-#define TCCR2A_ENABLE 0b00001100
-#define TCCR2A_DISABLE 0x00
-#define OCR_DISABLE 0xff
 
 #define LS_STATE_OFF 0
 #define LS_STATE_RAMPUP 1
@@ -27,16 +24,21 @@ class LoadSwitch {
     public:
         LoadSwitch(Stream * _io = &Serial);
         void begin(int startFrequency, int runFrequency );
-        int turnOn();
-        int turnOff();
+        int turnOn(bool force=false);
+        void turnOff();
         int check();
         void setSupplyVoltages(double min, double max);
         void setOutputVoltage(double min, double maxDifference);
+        void setMaxOnTime(uint16_t ontimeInMillis);
+
         uint16_t finalStartMs = 0;
         uint16_t switchOnMs = 0;
         uint16_t switchFailMs = 0;
     private:
         uint8_t getTimerOn(int frequencyKhz);
+        int getADCReading(double voltage);
+        
+
         Stream* io;        
         uint8_t state = LS_STATE_OFF;
         int startFrequencyOCR; // value of OCR2A register
@@ -45,7 +47,7 @@ class LoadSwitch {
         int maxSupplyVoltageADCV; // value of analogRead
         int minOutVoltageADCV; // difference of analogueRead
         int maxLoadSwitchDifferenceADCV; // difference of analogueRead
-        uint16_t ontimeMillis;
+        uint16_t ontimeMillis = 60000;
 };
 
 

@@ -30,6 +30,10 @@ void LoadSwitch::begin(int startFrequency, int runFrequency ) {
     // Timer 3 is connected to pins 11 (A) and 3 (B)
   pinMode(11, OUTPUT);
   pinMode(3, OUTPUT);
+
+  digitalWrite(11,HIGH);
+  delay(100);
+  digitalWrite(11,LOW);
   // supply voltage on ADC0, power voltage on ADC1
   // setup the prescaler and PWM.
 
@@ -38,17 +42,28 @@ void LoadSwitch::begin(int startFrequency, int runFrequency ) {
   // page 114 for PWM description.
   // page 135
 
-  // mode needs to set TOP and PWM.
-  // 0bx0xx1xxx  CTC mode WGM20 = 0, WGM21 = 1
-  // 0bxx00xxxx  OC2 disconnected
-  // 0bxxxxx100 64 prescalar
-  // 0b00001100  result
 
   state = LS_STATE_OFF;
   startFrequencyOCR = getTimerOn(startFrequency);
   onFrequencyOCR = getTimerOn(runFrequency);
 
+  io->print("startFrequency f=");
+  io->print(startFrequency);
+  io->print(" ORC2A=");
+  io->println(startFrequencyOCR);
 
+  io->print("runFrequency f=");
+  io->print(runFrequency);
+  io->print(" ORC2A=");
+  io->println(onFrequencyOCR);
+
+}
+
+int LoadSwitch::getADCReading(double voltage) {
+    int r = voltage/0.02738839286;
+    if (r < 0) r = 0;
+    if ( r > 1024 ) r = 1024;
+    return r;
 }
 
 void LoadSwitch::setMaxOnTime(uint16_t ontimeInMillis) {
@@ -59,11 +74,27 @@ void LoadSwitch::setMaxOnTime(uint16_t ontimeInMillis) {
 void LoadSwitch::setSupplyVoltages(double min, double max) {
   minSupplyVoltageADCV = getADCReading(min);
   maxSupplyVoltageADCV = getADCReading(max);
+  io->print("minSupplyVoltageADCV v=");
+  io->print(min);
+  io->print(" adc=");
+  io->println(minSupplyVoltageADCV);
+  io->print("maxSupplyVoltageADCV v=");
+  io->print(max);
+  io->print(" adc=");
+  io->println(maxSupplyVoltageADCV);
 }
 
 void LoadSwitch::setOutputVoltage(double min, double maxDifference) {
   minOutVoltageADCV = getADCReading(min);
   maxLoadSwitchDifferenceADCV = getADCReading(maxDifference);
+  io->print("minOutVoltageADCV v=");
+  io->print(min);
+  io->print(" adc=");
+  io->println(minOutVoltageADCV);
+  io->print("maxLoadSwitchDifferenceADCV v=");
+  io->print(maxDifference);
+  io->print(" adc=");
+  io->println(maxLoadSwitchDifferenceADCV);
 }
 
 
@@ -80,7 +111,7 @@ uint8_t LoadSwitch::getTimerOn(int frequencyKhz) {
 }
 
 
-int LoadSwitch::turnOn() {
+int LoadSwitch::turnOn(bool force) {
     if ( state == LS_STATE_ON ) {
         return LOADSWITCH_ON;
     }
@@ -89,53 +120,99 @@ int LoadSwitch::turnOn() {
     // set the run frequency
     // if ADC1 doesnt meet required frequency withing desired time, then fail
     int vin = analogRead(A0); 
-    if ( vin < minSupplyVoltageADCV ) {
-        // dont start, voltage too low
-        turnOff();
-        return LOADSWITCH_LOW_VOLTAGE;
-    } else if ( vin > maxSupplyVoltageADCV ) {
-        turnOff();
-        return LOADSWITCH_HIGH_VOLTAGE;
+    if ( !force ) {
+        if (  vin < minSupplyVoltageADCV ) {
+            // dont start, voltage too low
+            io->println("Supply too low ");
+            turnOff();
+            return LOADSWITCH_LOW_VOLTAGE;
+        } else if (  vin > maxSupplyVoltageADCV ) {
+            io->println("Supply Too High ");
+            turnOff();
+            return LOADSWITCH_HIGH_VOLTAGE;
+        }        
     }
 
-    TCCR2A = TCCR2A_ENABLE;
+
+    // The datasheet does seem to match these settings/
+    // tken from https://www.arduino.cc/en/pmwiki.php?n=Tutorial/SecretsOfArduinoPWM
+    // prescaler 64 CS11 CS10 == 1
+    // CTC toggle   COM1A0 == 1
+    // Mode 9, WGM20 WGM22 == 1, phase correct pwm with OCR2A setting the freequency.
+
+    TCCR2A = _BV(COM2A0) | _BV(WGM20) ;
+    TCCR2B = _BV(CS11) | _BV(CS10)  |  _BV(WGM22);
+ 
     OCR2A = startFrequencyOCR;
+    io->println(OCR2A);
     state = LS_STATE_RAMPUP;
     unsigned long beginIngressMs = millis();
     finalStartMs = 0;
     switchOnMs = 0;
     switchFailMs = 0;
-    while((millis()-beginIngressMs) < ontimeMillis) {
+    io->println("Turning on");
+    unsigned long timeout = ontimeMillis;
+    if (force) {
+        timeout = 60000;
+    }
+    while((millis()-beginIngressMs) < timeout) {
         int vin = analogRead(A0);
         int vout = analogRead(A1);
         switch (state) {
             case LS_STATE_RAMPUP: // ramping upi
-                if ( vout > minOutVoltageADCV ) {
-                    state = LS_STATE_RAMPUP_FINAL;
-                    finalStartMs = (uint16_t) (millis()-beginIngressMs);
+                if ( force) {
+                    if ( millis() - beginIngressMs > 5000 ) {
+                        io->println("Forced end of ramp up");
+                        state = LS_STATE_RAMPUP_FINAL;
+                        finalStartMs = (uint16_t) (millis()-beginIngressMs);
+                    }
+                } else {
+                    if ( vout > minOutVoltageADCV ) {
+                        io->println("Ramped up");
+                        state = LS_STATE_RAMPUP_FINAL;
+                        finalStartMs = (uint16_t) (millis()-beginIngressMs);
+                    }
                 }
                 break;
             case LS_STATE_RAMPUP_FINAL: // ramping up, final
-                if ( (vin - vout) < maxLoadSwitchDifferenceADCV ) {
-                    state = LS_STATE_ON;
-                    OCR2A = onFrequencyOCR;
-                    switchOnMs = (uint16_t) (millis()-beginIngressMs);
-                    return LOADSWITCH_ON;
+                if ( force) {
+                    if ( millis() - beginIngressMs > 10000 ) {
+                        io->println("Forced Fully on");
+                        state = LS_STATE_ON;
+                        OCR2A = onFrequencyOCR;
+                        io->println(OCR2A);
+                        switchOnMs = (uint16_t) (millis()-beginIngressMs);
+                        return LOADSWITCH_ON;
+                    }
+                } else {
+                    if ( (vin - vout) < maxLoadSwitchDifferenceADCV ) {
+                        io->println("Fully on");
+                        state = LS_STATE_ON;
+                        OCR2A = onFrequencyOCR;
+                        switchOnMs = (uint16_t) (millis()-beginIngressMs);
+                        return LOADSWITCH_ON;
+                    }
                 }
                 break;
         }
+        delay(100);
     } 
     switchFailMs = (uint16_t) (millis()-beginIngressMs);
     // timed out, whats the problem ?
-    TCCR2A = TCCR2A_DISABLE;
+    TCCR2A = 0b00000000;
+    OCR2A = 0xff;
     if ( state == LS_STATE_RAMPUP ) {
+        io->println("Inrush fail");
         return LOADSWITCH_INRUSH_RAMP_FAILED;
     }
+    io->println("Stabalisation fail");
     return LOADSWITCH_STABLISATION_FAILED;
 }
 void LoadSwitch::turnOff() {
-    TCCR2A = TCCR2A_DISABLE;
-    OCR2A = OCR_DISABLE;
+    io->println("Turning off");
+    TCCR2A = 0x00;
+    TCCR2B = 0x00;
+    OCR2A = 0x00;
 
     state = LS_STATE_OFF;
 
@@ -148,20 +225,25 @@ int LoadSwitch::check() {
     int vin = analogRead(A0);
     int vout = analogRead(A1);
     if ( vin < minOutVoltageADCV ) {
+       io->println("Turning off, output voltage too low");
         turnOff();
         return LOADSWITCH_LOW_VOLTAGE;
     } else if ( vin > maxSupplyVoltageADCV ) {
+       io->println("Turning off, supply voltage too high");
         turnOff();
         return LOADSWITCH_HIGH_VOLTAGE;
     }
     if ( state == LS_STATE_OFF ) {
         return LOADSWITCH_OFF;
     }
-    if ( vout > minOutVoltageADCV ) {
+    if ( vout < minOutVoltageADCV ) {
+       io->println("Out voltage too low");
         return LOADSWITCH_INRUSH_RAMP_FAILED;
-    } else if ( (vin - vout) < maxLoadSwitchDifferenceADCV ) {
+    } else if ( (vin - vout) > maxLoadSwitchDifferenceADCV ) {
+       io->println("Out voltage too far below supply");
         return LOADSWITCH_STABLISATION_FAILED;
     } else {
+       io->println("Loadswitch on");
         return LOADSWITCH_ON;
     }
 }

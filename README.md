@@ -1,7 +1,7 @@
 
 # Ultrasonic Antifouling Mk2.
 
-My Mk1 unit finally failed after 4 years contnuous permanently on. It was only restarted when there were powercuts on shorepower. If failed because of salt getting onto the back of the board causing a short which blew the Arduino. Rather than fix, I decided to build Mk2. This time its taken 2 weeks of evenings. Last time too months.
+My Mk1 unit finally failed after 4 years contnuous permanently on. It was only restarted when there were powercuts on shorepower. If failed because of salt getting onto the back of the board causing a short which blew the Arduino. Rather than fix, I decided to build Mk2. This time its taken 2 weeks of evenings. Last time two months.
 
 The design is much simpler. It uses the PWM output of the Atmel328p Timer1 running off a 16MHz 5V pro mini with no pre-scaler. The MOSFET drivers are still used over driving the MOSFETs from logic levels, but there is not precise frequency generator the variable power is simplified to run in 3 states depending on input voltage. Anything over 13.7 runs at high power consumption. 13.7 to 12 at half power consumption. Below 12 the 328p goes into a sleep mode drawing 20mA until the supply voltage returns. 
 
@@ -152,6 +152,13 @@ OCRn=80 = 1.5KHz
 OCRn=160 = 0.7KHz
 etc
 
+# Soft start testing
+
+Using a frequency of 5KHz for start and 40KHz for on workd, however the IRF540 Vgs at 4.5v is too low to turn the Mosfet fully on. Switching to a IRL540 (logic level), with 0.5KHz start and 20KHz on works perfectly. The inrush current is down from 26A to 0.5A and so far the IRL540 is remaining cool. 0.5Khz generates a Vgs of about 1.4v. 20KHz is about 4.5v.
+
+# Peak current.
+
+At resonance and frequencies above 60Khz the current rises above the current limit on the bench supply, so there will need to be some adjustment to the energy pushed into the transducer at the top end of the range so that 3x transduces dont overload a 10A switch mode supply causing it to trip.
 
 
 

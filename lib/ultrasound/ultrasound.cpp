@@ -24,7 +24,7 @@ Ultrasound::Ultrasound(Stream * _io) {
 }
 
 
-void Ultrasound::begin(int _enablePin, double frequency, double pwm, bool inverted) {
+void Ultrasound::begin(uint8_t _enablePin, double frequency, double pwm, bool inverted) {
     // Timer 1 is connected to pins 9 and 10
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);

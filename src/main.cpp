@@ -48,10 +48,10 @@ bool checkLoadSwitch(int result, bool abort = false) {
       errorSequence(7, abort);
       break;
     case LOADSWITCH_LOW_VOLTAGE:
-      flashLed(8)
+      flashLed(8);
       break;
     case LOADSWITCH_ON:
-      flashLed(9)
+//      flashLed(9);
       return true;
   }
   return false;
@@ -65,7 +65,7 @@ void setup() {
   ultrasound.begin(12, 20,10,false);
   Serial.println(F("Ready"));
   Serial.println(F("$>"));
-  loadswitch.begin(1,10);
+  loadswitch.begin(0.5,20);
   loadswitch.setSupplyVoltages(12.0,15.0);
   loadswitch.setOutputVoltage(10.5, 2.0);
   checkLoadSwitch(loadswitch.turnOn(), true);
@@ -102,7 +102,7 @@ void loop() {
         // but flash the led on off to indicate resting.
         toggleLed(4);
         delay(5000);
-        checkLoadSwitch(loadswitch.check());
+        checkLoadSwitch(loadswitch.turnOn());
       }
       loadswitch.turnOn();
     } else {  // > 13.7
