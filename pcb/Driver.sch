@@ -44,17 +44,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L ArdinoMinPro U1
-U 1 1 6081B080
-P 2350 1650
-F 0 "U1" H 2650 1650 60  0000 C CNN
-F 1 "ArdinoMinPro" H 2350 1650 60  0000 C CNN
-F 2 "Divers:ArduinoProMini" H 2650 1650 60  0001 C CNN
-F 3 "" H 2650 1650 60  0001 C CNN
-	1    2350 1650
-	1    0    0    -1  
-$EndComp
-$Comp
 L MCP14E3 U2
 U 1 1 6081B464
 P 5850 2800
@@ -121,7 +110,7 @@ F 3 "" H 6650 1650 60  0000 C CNN
 	1    6650 1650
 	1    0    0    -1  
 $EndComp
-Text GLabel 7750 1350 2    60   Input ~ 0
+Text GLabel 8250 1350 2    60   Input ~ 0
 12vPower
 $Comp
 L GND #PWR01
@@ -202,7 +191,7 @@ F 3 "" H 7000 1350 60  0000 C CNN
 	1    7000 1350
 	-1   0    0    1   
 $EndComp
-Text Notes 4700 6100 0    60   ~ 0
+Text Notes 5700 6050 0    60   ~ 0
 Peak Drive current IRF540N = Q/dT = 95/39 = 2.4A \nRFP50N06 = 125/55 = 2.27A\nDriver Power\nIRF540N = 1400E-12*12*12*250E3 = 50mW\nRFP50N06 = 2200E-12*12*12*250E3 = 80mW\n\nMCP14E3 can deliver 4.5A at 18V and will drive at about 15ns for 1400pF@12V gate.\nIt will disipate 1.1W\n\nhttp://ww1.microchip.com/downloads/en/Appnotes/00799b.pdf\n\nClampin diodes on the mosfet gates mitigate latch up due too negative overshoot and protect the gate in event of positive overshoot. The test board barely overshoots.\n\n\nPro Minis will not run on 14V and are liable to blow, so stepping down to 8v with a 1A 7808\nreduces this risk and provides better isplation from the mosfets, coil and driver.\n\nThe MCP14E4 sinks no more than 1mA per input pin, so the 120R limit the output of the Pro mini to 4mA in the event of a failiure on the MCP14E4\n\n\n\n
 Text GLabel 6150 6200 2    60   Output ~ 0
 12vPower
@@ -267,7 +256,7 @@ U 1 1 60828DD8
 P 4100 1500
 F 0 "C6" H 4100 1600 40  0000 L CNN
 F 1 "1uF" H 4106 1415 40  0000 L CNN
-F 2 "Capacitors_SMD:C_0805_HandSoldering" H 4138 1350 30  0001 C CNN
+F 2 "Capacitors_SMD:C_1210_HandSoldering" H 4138 1350 30  0001 C CNN
 F 3 "" H 4100 1500 60  0000 C CNN
 	1    4100 1500
 	1    0    0    -1  
@@ -380,9 +369,7 @@ ADC1
 Text GLabel 3400 1900 2    60   Input ~ 0
 ADC1
 NoConn ~ 3150 1400
-NoConn ~ 3150 1500
 NoConn ~ 3150 1600
-NoConn ~ 3150 1700
 NoConn ~ 3150 2000
 NoConn ~ 3150 2400
 NoConn ~ 3150 2500
@@ -602,8 +589,6 @@ Wire Wire Line
 	6450 2000 6450 1900
 Connection ~ 6450 1900
 Wire Wire Line
-	7450 3050 8050 3050
-Wire Wire Line
 	8350 2450 8350 2550
 Wire Wire Line
 	8350 2550 8700 2550
@@ -655,7 +640,7 @@ Wire Wire Line
 	7250 3600 7250 3400
 Connection ~ 7100 3600
 Wire Wire Line
-	7200 1350 7750 1350
+	7200 1350 7450 1350
 Connection ~ 7250 1350
 Connection ~ 7250 1650
 Wire Wire Line
@@ -753,8 +738,6 @@ Wire Wire Line
 Connection ~ 7100 3750
 Wire Wire Line
 	5900 3450 5900 3750
-Wire Wire Line
-	6650 2350 7450 2350
 Connection ~ 4100 1200
 Connection ~ 1100 6200
 Wire Wire Line
@@ -976,18 +959,10 @@ $EndComp
 NoConn ~ 1650 2200
 Wire Wire Line
 	7250 2200 7250 3000
-Wire Wire Line
-	6650 2500 7450 2500
 Connection ~ 7250 2500
-Wire Wire Line
-	7450 2500 7450 3050
 Wire Wire Line
 	6950 2200 6950 3000
 Connection ~ 6950 2350
-Wire Wire Line
-	7450 2350 7450 2300
-Wire Wire Line
-	7450 2300 8050 2300
 Wire Wire Line
 	10100 2500 10250 2500
 $Comp
@@ -1005,4 +980,124 @@ Wire Wire Line
 	10250 2600 10200 2600
 Wire Wire Line
 	10200 2600 10200 2800
+$Comp
+L R R11
+U 1 1 609E3987
+P 7650 2300
+F 0 "R11" V 7730 2300 40  0000 C CNN
+F 1 "0R" V 7657 2301 40  0000 C CNN
+F 2 "Resistors_SMD:R_0805_HandSoldering" V 7580 2300 30  0001 C CNN
+F 3 "" H 7650 2300 30  0000 C CNN
+	1    7650 2300
+	0    1    1    0   
+$EndComp
+$Comp
+L R R12
+U 1 1 609E3A7D
+P 7650 3050
+F 0 "R12" V 7730 3050 40  0000 C CNN
+F 1 "0R" V 7657 3051 40  0000 C CNN
+F 2 "Resistors_SMD:R_0805_HandSoldering" V 7580 3050 30  0001 C CNN
+F 3 "" H 7650 3050 30  0000 C CNN
+	1    7650 3050
+	0    1    1    0   
+$EndComp
+$Comp
+L R R13
+U 1 1 609E3D60
+P 7700 1350
+F 0 "R13" V 7780 1350 40  0000 C CNN
+F 1 "0R" V 7707 1351 40  0000 C CNN
+F 2 "Resistors_SMD:R_0805_HandSoldering" V 7630 1350 30  0001 C CNN
+F 3 "" H 7700 1350 30  0000 C CNN
+	1    7700 1350
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7950 1350 8250 1350
+Wire Wire Line
+	6650 2350 7100 2350
+Wire Wire Line
+	7100 2350 7100 2300
+Wire Wire Line
+	7100 2300 7400 2300
+Wire Wire Line
+	7900 2300 8050 2300
+Wire Wire Line
+	7900 3050 8050 3050
+Wire Wire Line
+	7400 3050 7350 3050
+Wire Wire Line
+	7350 3050 7350 2500
+Wire Wire Line
+	7350 2500 6650 2500
+Text Notes 7550 1800 0    60   ~ 0
+0R links to enable testing, \nDrvier should pull 1mA with no\n mosfets connected.
+$Comp
+L R R3
+U 1 1 609E4DDE
+P 5000 3700
+F 0 "R3" V 5080 3700 40  0000 C CNN
+F 1 "10K" V 5007 3701 40  0000 C CNN
+F 2 "Resistors_SMD:R_0805_HandSoldering" V 4930 3700 30  0001 C CNN
+F 3 "" H 5000 3700 30  0000 C CNN
+	1    5000 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR014
+U 1 1 609E4DEA
+P 5000 4850
+F 0 "#PWR014" H 5000 4850 30  0001 C CNN
+F 1 "GND" H 5000 4780 30  0001 C CNN
+F 2 "" H 5000 4850 60  0001 C CNN
+F 3 "" H 5000 4850 60  0001 C CNN
+	1    5000 4850
+	1    0    0    -1  
+$EndComp
+Text GLabel 4350 3400 0    60   Input ~ 0
+5v
+Text GLabel 5350 4050 2    60   Output ~ 0
+ADC3
+Wire Wire Line
+	4350 3400 5000 3400
+Wire Wire Line
+	5000 3400 5000 3450
+Wire Wire Line
+	5000 3950 5000 4250
+Wire Wire Line
+	5000 4050 5350 4050
+Connection ~ 5000 4050
+$Comp
+L THERMISTOR TH1
+U 1 1 609E5290
+P 5000 4500
+F 0 "TH1" V 5100 4550 50  0000 C CNN
+F 1 "MF52-103 Thermistor 10K" V 4900 4500 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 5000 4500 60  0001 C CNN
+F 3 "https://www.gotronic.fr/pj2-mf52type-1554.pdf" H 5000 4500 60  0000 C CNN
+	1    5000 4500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5000 4750 5000 4850
+Text GLabel 3400 1700 2    60   Input ~ 0
+ADC3
+$Comp
+L ArdinoMinPro U1
+U 1 1 6081B080
+P 2350 1650
+F 0 "U1" H 2650 1650 60  0000 C CNN
+F 1 "ArdinoMinPro" H 2350 1650 60  0000 C CNN
+F 2 "Divers:ArduinoProMini" H 2650 1650 60  0001 C CNN
+F 3 "" H 2650 1650 60  0001 C CNN
+	1    2350 1650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3400 1700 3150 1700
+Text GLabel 3300 1500 2    60   Output ~ 0
+5v
+Wire Wire Line
+	3150 1500 3300 1500
 $EndSCHEMATC
