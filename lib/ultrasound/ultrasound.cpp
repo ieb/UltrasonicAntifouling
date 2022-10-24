@@ -51,7 +51,7 @@ void Ultrasound::begin(uint8_t _enablePin, double frequency, double pwm, bool in
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x03 ; // 250KHz
 //  TCCR1B = (TCCR1B & 0x0F8) | 0x04 ; // 15.625KHz 
   setEnabled(false);
-  setFrequency(frequency); // 62.5Khz
+  setFrequencyKhz(frequency); // 62.5Khz
   setPwm(pwm);
 }
 
@@ -74,9 +74,12 @@ void Ultrasound::setEnabled(bool enabled) {
         digitalWrite(enablePin, LOW);
     }
 }
+void Ultrasound::setFrequencyHz(uint16_t  frequencyHz) {
+    setFrequencyKhz(0.001*frequencyHz);
+}
 
 
-void Ultrasound::setFrequency(double requestedFrequencyKhz) {
+void Ultrasound::setFrequencyKhz(double requestedFrequencyKhz) {
   if ( requestedFrequencyKhz > 250 ) {
     frequencyKhz = 250; 
   } else if ( requestedFrequencyKhz < 0.2 ) {
@@ -153,7 +156,7 @@ int8_t Ultrasound::docmd(const char * command) {
             dump(); 
             break;
         case CMD_FREQENCY:
-            setFrequency(atof(data));
+            setFrequencyKhz(atof(data));
             io->print(F("f="));
             io->print(achievedFrequency);
             io->print(F(",t="));

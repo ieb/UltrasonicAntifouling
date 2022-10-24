@@ -35,7 +35,6 @@ class LoadSwitch {
         uint16_t switchOnMs = 0;
         uint16_t switchFailMs = 0;
     private:
-        uint8_t getTimerOn(int frequencyKhz);
         int getADCReading(double voltage);
         
 

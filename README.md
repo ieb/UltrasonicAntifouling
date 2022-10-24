@@ -182,6 +182,14 @@ Looking at the v2 board with a FLIR device showed that the MCP14E4 was overheati
 
 
 
+# Transformer
+
+The output of the device is about 600v peak to peak which is probably too high for the transducers and will cause premature failure. I reused transformers from the preveous generator. Unwinding the coils refealed a 4-0-4 primary and a 0-90 secondary. Since the primary is driven alternately the effective peak to peak is 28v on a 14v supply making the peak to peak output 630v which is too high and is the reason the pulse pattern needed to be so short. 
+
+
+
+
+
 
 
 

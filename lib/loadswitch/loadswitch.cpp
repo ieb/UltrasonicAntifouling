@@ -44,18 +44,33 @@ void LoadSwitch::begin(int startFrequency, int runFrequency ) {
 
 
   state = LS_STATE_OFF;
-  startFrequencyOCR = getTimerOn(startFrequency);
-  onFrequencyOCR = getTimerOn(runFrequency);
+  io->print(F("Getting timers"));
+  io->flush();
 
-  io->print("startFrequency f=");
+  // f = 16000/(2*64*(1+OCRn))
+  // OCRn = (16000/(2*64*f))-1;
+  if ( startFrequency == 0 ) {
+    startFrequencyOCR =  0xff;
+  } else {
+    startFrequencyOCR = (16000/(2*64*startFrequency));
+  }
+  if ( runFrequency == 0 ) {
+    onFrequencyOCR =  0xff;
+  } else {
+    onFrequencyOCR = (16000/(2*64*runFrequency));
+  }
+
+
+  io->print(F("startFrequency f="));
   io->print(startFrequency);
-  io->print(" ORC2A=");
+  io->print(F(" ORC2A="));
   io->println(startFrequencyOCR);
 
-  io->print("runFrequency f=");
+  io->print(F("runFrequency f="));
   io->print(runFrequency);
-  io->print(" ORC2A=");
+  io->print(F(" ORC2A="));
   io->println(onFrequencyOCR);
+  io->print(F("Done Getting timers"));
 
 }
 
@@ -74,41 +89,30 @@ void LoadSwitch::setMaxOnTime(uint16_t ontimeInMillis) {
 void LoadSwitch::setSupplyVoltages(double min, double max) {
   minSupplyVoltageADCV = getADCReading(min);
   maxSupplyVoltageADCV = getADCReading(max);
-  io->print("minSupplyVoltageADCV v=");
+  io->print(F("minSupplyVoltageADCV v="));
   io->print(min);
-  io->print(" adc=");
+  io->print(F(" adc="));
   io->println(minSupplyVoltageADCV);
-  io->print("maxSupplyVoltageADCV v=");
+  io->print(F("maxSupplyVoltageADCV v="));
   io->print(max);
-  io->print(" adc=");
+  io->print(F(" adc="));
   io->println(maxSupplyVoltageADCV);
 }
 
 void LoadSwitch::setOutputVoltage(double min, double maxDifference) {
   minOutVoltageADCV = getADCReading(min);
   maxLoadSwitchDifferenceADCV = getADCReading(maxDifference);
-  io->print("minOutVoltageADCV v=");
+  io->print(F("minOutVoltageADCV v="));
   io->print(min);
-  io->print(" adc=");
+  io->print(F(" adc="));
   io->println(minOutVoltageADCV);
-  io->print("maxLoadSwitchDifferenceADCV v=");
+  io->print(F("maxLoadSwitchDifferenceADCV v="));
   io->print(maxDifference);
-  io->print(" adc=");
+  io->print(F(" adc="));
   io->println(maxLoadSwitchDifferenceADCV);
 }
 
 
-// f = 16000/(2*64*(1+OCRn))
-// OCRn = (16000/(2*64*f))-1;
-uint8_t LoadSwitch::getTimerOn(int frequencyKhz) {
-    int n = (16000/(2*64*frequencyKhz));
-    if ( n < 0 ) {
-        return 0;
-    } else if ( n > 255) {
-        return 0xff;
-    }
-    return (uint8_t)n;
-}
 
 
 int LoadSwitch::turnOn(bool force) {
@@ -123,11 +127,11 @@ int LoadSwitch::turnOn(bool force) {
     if ( !force ) {
         if (  vin < minSupplyVoltageADCV ) {
             // dont start, voltage too low
-            io->println("Supply too low ");
+            io->println(F("Supply too low "));
             turnOff();
             return LOADSWITCH_LOW_VOLTAGE;
         } else if (  vin > maxSupplyVoltageADCV ) {
-            io->println("Supply Too High ");
+            io->println(F("Supply Too High "));
             turnOff();
             return LOADSWITCH_HIGH_VOLTAGE;
         }        
@@ -150,7 +154,7 @@ int LoadSwitch::turnOn(bool force) {
     finalStartMs = 0;
     switchOnMs = 0;
     switchFailMs = 0;
-    io->println("Turning on");
+    io->println(F("Turning on"));
     unsigned long timeout = ontimeMillis;
     if (force) {
         timeout = 60000;
@@ -162,13 +166,13 @@ int LoadSwitch::turnOn(bool force) {
             case LS_STATE_RAMPUP: // ramping upi
                 if ( force) {
                     if ( millis() - beginIngressMs > 5000 ) {
-                        io->println("Forced end of ramp up");
+                        io->println(F("Forced end of ramp up"));
                         state = LS_STATE_RAMPUP_FINAL;
                         finalStartMs = (uint16_t) (millis()-beginIngressMs);
                     }
                 } else {
                     if ( vout > minOutVoltageADCV ) {
-                        io->println("Ramped up");
+                        io->println(F("Ramped up"));
                         state = LS_STATE_RAMPUP_FINAL;
                         finalStartMs = (uint16_t) (millis()-beginIngressMs);
                     }
@@ -177,7 +181,7 @@ int LoadSwitch::turnOn(bool force) {
             case LS_STATE_RAMPUP_FINAL: // ramping up, final
                 if ( force) {
                     if ( millis() - beginIngressMs > 10000 ) {
-                        io->println("Forced Fully on");
+                        io->println(F("Forced Fully on"));
                         state = LS_STATE_ON;
                         OCR2A = onFrequencyOCR;
                         io->println(OCR2A);
@@ -186,7 +190,7 @@ int LoadSwitch::turnOn(bool force) {
                     }
                 } else {
                     if ( (vin - vout) < maxLoadSwitchDifferenceADCV ) {
-                        io->println("Fully on");
+                        io->println(F("Fully on"));
                         state = LS_STATE_ON;
                         OCR2A = onFrequencyOCR;
                         switchOnMs = (uint16_t) (millis()-beginIngressMs);
@@ -202,14 +206,14 @@ int LoadSwitch::turnOn(bool force) {
     TCCR2A = 0b00000000;
     OCR2A = 0xff;
     if ( state == LS_STATE_RAMPUP ) {
-        io->println("Inrush fail");
+        io->println(F("Inrush fail"));
         return LOADSWITCH_INRUSH_RAMP_FAILED;
     }
-    io->println("Stabalisation fail");
+    io->println(F("Stabalisation fail"));
     return LOADSWITCH_STABLISATION_FAILED;
 }
 void LoadSwitch::turnOff() {
-    io->println("Turning off");
+    io->println(F("Turning off"));
     TCCR2A = 0x00;
     TCCR2B = 0x00;
     OCR2A = 0x00;
@@ -225,11 +229,11 @@ int LoadSwitch::check() {
     int vin = analogRead(A0);
     int vout = analogRead(A1);
     if ( vin < minOutVoltageADCV ) {
-       io->println("Turning off, output voltage too low");
+       io->println(F("Turning off, output voltage too low"));
         turnOff();
         return LOADSWITCH_LOW_VOLTAGE;
     } else if ( vin > maxSupplyVoltageADCV ) {
-       io->println("Turning off, supply voltage too high");
+       io->println(F("Turning off, supply voltage too high"));
         turnOff();
         return LOADSWITCH_HIGH_VOLTAGE;
     }
@@ -237,13 +241,13 @@ int LoadSwitch::check() {
         return LOADSWITCH_OFF;
     }
     if ( vout < minOutVoltageADCV ) {
-       io->println("Out voltage too low");
+       io->println(F("Out voltage too low"));
         return LOADSWITCH_INRUSH_RAMP_FAILED;
     } else if ( (vin - vout) > maxLoadSwitchDifferenceADCV ) {
-       io->println("Out voltage too far below supply");
+       io->println(F("Out voltage too far below supply"));
         return LOADSWITCH_STABLISATION_FAILED;
     } else {
-       io->println("Loadswitch on");
+       io->println(F("Loadswitch on"));
         return LOADSWITCH_ON;
     }
 }

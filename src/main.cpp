@@ -2,28 +2,31 @@
 #include <ultrasound.h>
 #include <loadswitch.h>
 
+#define TOPF 30000
+#define BOTF 15000
+#define STEPF 100
+
+
+const int pwm = 20;
+
 
 Ultrasound ultrasound(&Serial);
 LoadSwitch loadswitch(&Serial);
 
-void toggleLed(int times) {
+void changeLed() {
   static uint8_t ledOn = 0;
   ledOn = !ledOn;
   digitalWrite(LED_BUILTIN, ledOn);
-  for (int i = 1; i < times; i++ ) {
-    ledOn = !ledOn;
-    delay(100);
-    digitalWrite(LED_BUILTIN, ledOn);
-  }
 }
 
 void flashLed(int flashes) {
-    for (int i = 0; i < flashes; i++ ) {
-        digitalWrite(LED_BUILTIN, HIGH);
-        delay(200);
-        digitalWrite(LED_BUILTIN, LOW);
-        delay(200);
-    }
+  digitalWrite(LED_BUILTIN, LOW);
+  for (int i = 0; i < flashes; i++ ) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(400);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(400);
+  }
 }
 
 void errorSequence(int flashes, bool forever ) {
@@ -59,15 +62,19 @@ bool checkLoadSwitch(int result, bool abort = false) {
 
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println(F("Starting PWM"));
+  Serial.begin(9600);
+  Serial.println(F("Starting PWMv2"));
   ultrasound.begin(12, 20,10,false);
   Serial.println(F("Ready"));
   Serial.println(F("$>"));
   loadswitch.begin(0.5,20);
+  Serial.println(F("1"));
   loadswitch.setSupplyVoltages(12.0,15.0);
+  Serial.println(F("2"));
   loadswitch.setOutputVoltage(10.5, 2.0);
+  Serial.println("Turning On");
   checkLoadSwitch(loadswitch.turnOn(), true);
+  Serial.println("SetupDone");
 }
 
 
@@ -104,7 +111,7 @@ int16_t tcurveNMF5210K[] = {
   203 //60 1024*2476/(2476+10000)
 };
 
-#define tcurve tcurveNTCLG100E2
+#define tcurve tcurveNMF5210K
 
 
 int8_t ntcTemperature(int16_t reading) {
@@ -120,11 +127,140 @@ int8_t ntcTemperature(int16_t reading) {
 }
 
 
+
+// 12 steps in each band
+// 14 bands 19 - 41 Khz
+// 80Hz steps at 20Khz
+// 344Hz at 41Khz
+// 600ms at 20Khz
+// 300ms at 40Khz
+
+void fullScan() {
+  static double freq = 19000;
+  uint16_t duration = 300.0+300.0*(41000.0-freq)/(41000.0-19000.0);
+  Serial.print("jaycar f=");
+  Serial.print(freq);
+  Serial.print(" d=");
+  Serial.println(duration);
+  
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(freq);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  delay(duration);
+  ultrasound.setEnabled(false);
+  double step = 80.0+(344.0-80.0)*(1.0-(41000.0-freq)/(41000.0-19000.0));
+  freq += step;
+  if (freq > 41000) {
+    freq = 19000;
+  }
+}
+
+  
+
+
+
+
+/*
+void randomPulse(uint16_t bottom=BOTF, uint16_t top=TOPF) {
+  Serial.println(F("Random Pulse"));
+  ultrasound.setPwm(pwm);
+  for ( int i = 0; i < 10; i++) {
+    ultrasound.setFrequencyHz(random(bottom,top));
+    ultrasound.resetCounters();
+    ultrasound.setEnabled(true);
+    delay(300);
+    ultrasound.setEnabled(false);
+    delay(50);
+  } 
+}
+void staticOutput(uint16_t freq, uint16_t duration) {
+  Serial.print(F("Static: "));
+  Serial.println(freq);
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(freq);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  delay(duration);
+  ultrasound.setEnabled(false);
+
+}
+
+void fixed(uint16_t bottom=BOTF, uint16_t top=TOPF) {
+  Serial.print(F("Fixed Pulse: "));
+  uint16_t f1 = random(bottom,top);
+  Serial.println(f1);
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(f1);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  delay(500);
+  ultrasound.setEnabled(false);
+}
+void warble(uint16_t bottom=BOTF, uint16_t top=TOPF) {
+  uint16_t f1 = random(bottom,top);
+  uint16_t f2 = random(bottom,top);
+  Serial.print(F("Warble Pulse"));
+  Serial.print(f1);
+  Serial.print(F(" "));
+  Serial.println(f2);
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(f1);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  for ( int i = 0; i < 20; i++) {
+    ultrasound.setFrequencyHz(f2);
+    delay(100);
+    ultrasound.setFrequencyHz(f1);
+    delay(100);
+  } 
+  ultrasound.setEnabled(false);
+}
+void rampUp(uint16_t bottom=BOTF, uint16_t top=TOPF, uint16_t step=STEPF) {  
+  Serial.println(F("Ramp Up"));
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(bottom);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  for ( int32_t f = bottom; f < top; f += step  ) {
+    ultrasound.setFrequencyHz(f);
+  } 
+  ultrasound.setEnabled(false);
+}
+void rampDown(uint16_t bottom=BOTF, uint16_t top=TOPF, uint16_t step=STEPF) {
+  Serial.println(F("Ramp Down"));
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(top);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  for ( int32_t f = top; f > bottom; f -= step  ) {
+    ultrasound.setFrequencyHz(f);
+  } 
+  ultrasound.setEnabled(false);
+}
+void fastRamp(uint16_t bottom=BOTF, uint16_t top=TOPF, uint16_t step=STEPF) {  
+  Serial.println(F("Ramp UpDown"));
+  ultrasound.setPwm(pwm);
+  ultrasound.setFrequencyHz(bottom);
+  ultrasound.resetCounters();
+  ultrasound.setEnabled(true);
+  for ( int i = 0; i < 5; i++) {
+    for ( int32_t f = bottom; f < top; f += step*10  ) {
+      ultrasound.setFrequencyHz(f);
+    } 
+    for ( int32_t f = top; f > bottom; f -= step*10  ) {
+      ultrasound.setFrequencyHz(f);
+    } 
+  }
+  ultrasound.setEnabled(false);
+}
+*/
+
+
 void loop() {
-  static double frequency = 18;
-  static int pwm = 20;
-  static int pulse = 10;
+//  static uint16_t freq = 20000;
   static int rest = 20;
+  int delayTime = 1000;
   // not safe to use serial line when running with full voltage.
   // ultrasound.process();
   delay(400);
@@ -134,42 +270,44 @@ void loop() {
     int16_t temperatureReading = analogRead(A2); 
     double  supplyVoltage = supplyVoltageReading*0.02738839286;  // 12.27 == 448 measured 
     int8_t temperature = ntcTemperature(temperatureReading);
-    Serial.print("vr=");
+    Serial.print(F("vr="));
     Serial.print(supplyVoltageReading);
-    Serial.print(" v=");
+    Serial.print(F(" v="));
     Serial.println(supplyVoltage);
-    Serial.print("vr=");
+    Serial.print(F("vr="));
     Serial.print(temperatureReading);
-    Serial.print(" t=");
+    Serial.print(F(" t="));
     Serial.println(temperature);
 
     // engine or solar or 240v supply, when on shore power independent supply is used.
     // relay switches over.
     if ( temperatureReading < 271 ) { // over 50C
-       Serial.println("Over temperature 50C, sleeping for 5s");
+       Serial.println(F("Over temperature 50C, sleeping for 5s"));
        loadswitch.turnOff();
-       toggleLed(20);
+       flashLed(10);
        delay(5000);
        return;
     } else if ( supplyVoltageReading < 426  ) { // < 12.0
-       Serial.println("Voltage too low, sleeping for 5s");
+       Serial.println(F("Voltage too low, sleeping for 5s"));
        loadswitch.turnOff();
-       toggleLed(6);
+       flashLed(3);
        delay(5000);
        return;
     } else if ( supplyVoltageReading < 489 ) { // 13.7
-      Serial.println("On battery, half power");
-      for (int i = 0; i < 6; i++) {
+      Serial.println(F("On battery, half power"));
+      for (int i = 0; i < 3; i++) {
         // low power mode, rest for 30s
         // but flash the led on off to indicate resting.
-        toggleLed(4);
+        flashLed(2);
         delay(5000);
       }
       checkLoadSwitch(loadswitch.turnOn());
+      delayTime = 2000;
     } else {  // > 13.7
-      Serial.println("On supply, full power");
-      delay(5000);
+      Serial.println(F("On supply, full power"));
+      delay(2000);
       loadswitch.turnOn();
+      delayTime = 1000;
     }
     rest = 0;
   }
@@ -180,8 +318,47 @@ void loop() {
   if(!checkLoadSwitch(loadswitch.check(), false)) {
     return; // voltage indicates should not output
   }
+  
 
-  toggleLed(1);
+
+
+  changeLed();
+
+
+
+  fullScan();
+  delay(delayTime);
+
+
+  /*
+  uint16_t lowF = 19000;
+  uint16_t highF = 32000;
+  uint16_t stepF = 100;
+
+  int p = random(1,100)%8;
+  p  = 6;
+  if ( p == 0 ) {
+    staticOutput(freq,500);
+    freq += 1000;
+    if (freq > 41000) freq = 20000;
+  } else if ( p == 1 ) {
+    randomPulse(lowF, highF);    
+  } else if (p == 2) {
+    rampUp(lowF, highF, stepF);
+  } else if (p == 3) {
+    fastRamp(lowF, highF, stepF);
+  } else if (p == 4) {
+    warble(lowF, highF);
+  } else if (p == 5) {
+    fixed(lowF, highF);
+  } else if ( p == 6) {
+    fullScan();
+  } else {
+    rampDown(lowF, highF, stepF);    
+  }
+  */
+
+/*
   frequency = frequency * 1.0721;
   if (frequency > 80) frequency = frequency-62.0;
   Serial.print("f=");Serial.print(frequency);Serial.print(" %=");Serial.print(pwm);Serial.print(" p=");
@@ -201,4 +378,5 @@ void loop() {
     ultrasound.setEnabled(false);
     delay(rechargeDuration);
   }
+  */
 }

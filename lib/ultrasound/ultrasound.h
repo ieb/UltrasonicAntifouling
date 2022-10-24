@@ -26,7 +26,8 @@ class Ultrasound {
         Ultrasound(Stream * _io = &Serial);
         void begin(uint8_t enablePin=12, double frequency=20, double pwm=10, bool inverted = false);
         void process(void);
-        void setFrequency(double  frequencyKhz);
+        void setFrequencyKhz(double  frequencyKhz);
+        void setFrequencyHz(uint16_t  frequencyHz);
         void setPwm(int percent);
         void setEnabled(bool enabled);
         void setDeadtime(int deadTimeMicros);
