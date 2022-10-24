@@ -66,9 +66,12 @@ Running the Arduino connected to a computer over serial port is not advised with
 
 I found with the previous 6 chanel versiom that although I had an elaborate configurtion method over serial, I never used it, and connecting a usb port to this board without proper isolation potentially exposes the computer to 600V or more if something goes wrong. So I hard code the sequence and flash the pro mini to make change with the power side of the driver disabled.
 
-The sequence 12 10ms bursts seperated by 20ms pause to rechage the capacitors. The sequence repeats 20 times before pausing, with a 400ms delay between sequences. Each sequence incresaes the frequency by 1.0721 times. At 80Khz, 62KHz is subtracted and the process continues. This ensures every frequency is covered.  On pause power levels are checked. On high power (> 13.7v supply) the pause is 8s. on Low power  (< 12v) the pause is 30s and below 12v the chip sleeps for 60 before checking the voltage again. No output is generated below 12v.
 
+In The version 2 software I had a complex output going upto 100KHz, but research indicats that while algae are discupted above 40KHz it requires very high power levels (60W or more). The researc reports that hard fouling is impacted most in the 20-30KHz range.
 
+So this version changes the 40KHz transducers with larger 27KHz transducers and outputs between 20 and 40Khz in 100Hz steps for 600ms At full power there is a 1.4 pause between frequencies. In low power this extends to 2.4s with an extended pause every 20 steps.
+
+Monitoring on a scope indicates the output of the 27Khz transducer is upto 30W at peak power in areas of resonance.
 
 
 # LEDS
@@ -77,13 +80,14 @@ The onboard led flashes to indicate state.  Flash period is 200ms. This approach
 
 On boot the battery state and any fault status is reported. The fault must be fixed before the unit will power up, on boot. After boot the unit will continue to function but will report the fault on every cycle.
 
+* Slow on off. - Normal operation state changes each time the ultrasound is switched on.
+* 2 flasses power supply > 13.6v, ultrasound will operate at lower power consumption.
+* 3 flasses power supply > 12.0v, ultrasound off
 * 4 flashes means supply voltage is too high > 15v, the unit will not run
 * 5 flashes means the initial slow charge failed to reach > 10.5v
 * 6 flashes means the charge failed to sabalise at less than 2V below the supply voltage, probably a failed mosfet.
-
-
 * 7 flashes means supply is turned off.
-
+* 8 flashes means supply is on but too low to start loadswitch.
 * 10 flashes means supply is turned off due to overtemp
 
 
